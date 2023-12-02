@@ -38,7 +38,7 @@ def recibir_csv():
         #Pruebas de codigo---------------------
         csv_path = '/shared_data/movie25.csv'
         midf = pd.read_csv(csv_path , sep=";")
-        midf = midf.head(5000000)
+        #midf = midf.head(5000000)
 
         #--------------------------------------
 
@@ -48,7 +48,7 @@ def recibir_csv():
         csv_path = '/shared_data/movie.csv'
         df.to_csv(csv_path, index=False)
         redis_conn.set('csv', json.dumps(nombre))'''
-        return jsonify({"csv cargado correctamente a redis"})
+        return jsonify({"mensaje": "csv cargado correctamente a redis"})
     else:
         return jsonify({"mensaje": "Esta ruta solo acepta solicitudes POST"})
 
@@ -231,12 +231,13 @@ def recibir_datos():
         rae['movieId'] = rae['movieId'].astype('int')
         rae['rating'] = rae['rating'].astype('float32')
 
-        lsrae = readLargeFile(rae.head(1000)) 
-        usuario = 45700
+        #lsrae = readLargeFile(rae.head(1000)) 
+        rae = rae.head(100000)
+        lsrae = rae.groupby('userId').apply(lambda x: dict(zip(x['movieId'], x['rating']))).to_dict()
         rfunc = manhattanL
 
         # 10 vecinos, 20 recomendaciones
-        lista = recommendationL(usuario, rfunc, 10, 20, 3.0, lsrae) # 3 seg
+        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, lsrae) # 3 seg
 
 
         '''consolidated_dfmi = columnas(rae, col1, col2, col3)
@@ -290,6 +291,9 @@ def recibir_datos():
         datarecomend = dict(lista_tuplas)
         peliculasp = datarecomend
 '''
+        tratado = [item for item in lista if item != -1]
+        peliculasp = {i: item[0] for i, item in enumerate(tratado, start=1)}
+       
         
     
 

@@ -1,0 +1,23 @@
+# Ignorar archivos generados por Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar archivos generados por pip
+*.egg-info/
+dist/
+
+# Ignorar entornos virtuales
+venv/
+env/
+
+# Ignorar archivos de caché de BeautifulSoup
+.cached/
+
+# Ignorar archivos específicos del proyecto
+config.ini  # o cualquier otro archivo específico
+
+# Ignorar archivos de dependencias y entornos de desarrollo
+/.vscode/
+/.idea/

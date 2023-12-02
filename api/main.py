@@ -231,9 +231,18 @@ def recibir_datos():
         rae['movieId'] = rae['movieId'].astype('int')
         rae['rating'] = rae['rating'].astype('float32')
 
-        #lsrae = readLargeFile(rae.head(1000)) 
+        #lsrae = readLargeFile(rae.head(100000)) 
         rae = rae.head(100000)
-        lsrae = rae.groupby('userId').apply(lambda x: dict(zip(x['movieId'], x['rating']))).to_dict()
+        #lsrae = rae.groupby('userId').apply(lambda x: dict(zip(x['movieId'], x['rating']))).to_dict()
+        
+        #-------Considerado aun mas veloz que el anterior e incluzo mas aun cuando hay mas datos-----
+        consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        # Obtener las columnas y valores del DataFrame
+        columns = consolidated_dfmi.columns
+        values = consolidated_dfmi.values
+
+        # Crear un diccionario a partir de los valores
+        lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
         rfunc = manhattanL
 
         # 10 vecinos, 20 recomendaciones

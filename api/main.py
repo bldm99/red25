@@ -40,6 +40,18 @@ def recibir_csv():
         midf = pd.read_csv(csv_path , sep=";")
         #midf = midf.head(5000000)
 
+        df_userselect = midf[midf['userId'] == 1]
+        movie_ids_user1 = df_userselect['movieId'].tolist()
+        rae = midf.query('movieId in @movie_ids_user1')
+
+        rae['userId'] = rae['userId'].astype('int')
+        rae['movieId'] = rae['movieId'].astype('int')
+        rae['rating'] = rae['rating'].astype('float32')
+
+        #lsrae = readLargeFile(rae.head(100000)) 
+        rae = rae.head(100000)
+
+        redis_conn.set('midf', rae.to_json())
         #--------------------------------------
 
         '''data = request.get_json()  
@@ -70,12 +82,17 @@ def recibir_datos():
         af = pd.read_csv(csv_path , sep=";")
 
         af = af.head(5000000)'''
+
+
+        midf_json = redis_conn.get('midf')
+        rae = pd.read_json(midf_json)
         #peli = af
-        peli = midf
+
+        '''peli = midf
 
         peli['userId'] = peli['userId'].astype('int')
         peli['movieId'] = peli['movieId'].astype('int')
-        peli['rating'] = peli['rating'].astype('float32')
+        peli['rating'] = peli['rating'].astype('float32')'''
 
 
         def readLargeFile( data):
@@ -234,7 +251,7 @@ def recibir_datos():
         #lsrae = readLargeFile(rae.head(100000)) 
         rae = rae.head(100000)
         #lsrae = rae.groupby('userId').apply(lambda x: dict(zip(x['movieId'], x['rating']))).to_dict()
-        
+
         #-------Considerado aun mas veloz que el anterior e incluzo mas aun cuando hay mas datos-----
         consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
         # Obtener las columnas y valores del DataFrame

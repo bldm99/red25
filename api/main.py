@@ -49,9 +49,17 @@ def recibir_csv():
         rae['rating'] = rae['rating'].astype('float32')
 
         #lsrae = readLargeFile(rae.head(100000)) 
-        rae = rae.head(100000)
+        #rae = rae.head(100000)
 
-        redis_conn.set('midf', rae.to_json())
+        consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        # Obtener las columnas y valores del DataFrame
+        columns = consolidated_dfmi.columns
+        values = consolidated_dfmi.values
+
+        # Crear un diccionario a partir de los valores
+        lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
+
+        redis_conn.set('lsrae', json.dumps(lsrae))
         #--------------------------------------
 
         '''data = request.get_json()  
@@ -83,9 +91,6 @@ def recibir_datos():
 
         af = af.head(5000000)'''
 
-
-        midf_json = redis_conn.get('midf')
-        rae = pd.read_json(midf_json)
         #peli = af
 
         '''peli = midf
@@ -244,7 +249,7 @@ def recibir_datos():
         movie_ids_user1 = df_userselect['movieId'].tolist()
         rae = peli.query('movieId in @movie_ids_user1')'''
 
-        rae['userId'] = rae['userId'].astype('int')
+        '''rae['userId'] = rae['userId'].astype('int')
         rae['movieId'] = rae['movieId'].astype('int')
         rae['rating'] = rae['rating'].astype('float32')
 
@@ -259,7 +264,12 @@ def recibir_datos():
         values = consolidated_dfmi.values
 
         # Crear un diccionario a partir de los valores
-        lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
+        lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}'''
+
+        lsrae_cached = redis_conn.get('lsrae')
+
+
+        lsrae = json.loads(lsrae_cached)
         rfunc = manhattanL
 
         # 10 vecinos, 20 recomendaciones

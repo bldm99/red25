@@ -240,9 +240,9 @@ def recibir_datos():
         
 
 
-        df_userselect = peli[peli['userId'] == numerox]
+        '''df_userselect = peli[peli['userId'] == numerox]
         movie_ids_user1 = df_userselect['movieId'].tolist()
-        rae = peli.query('movieId in @movie_ids_user1')
+        rae = peli.query('movieId in @movie_ids_user1')'''
 
         rae['userId'] = rae['userId'].astype('int')
         rae['movieId'] = rae['movieId'].astype('int')

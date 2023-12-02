@@ -249,7 +249,7 @@ def recibir_datos():
         rae['rating'] = rae['rating'].astype('float32')
 
         #lsrae = readLargeFile(rae.head(100000)) 
-        rae = rae.head(100000)
+        #rae = rae.head(100000)
         #lsrae = rae.groupby('userId').apply(lambda x: dict(zip(x['movieId'], x['rating']))).to_dict()
 
         #-------Considerado aun mas veloz que el anterior e incluzo mas aun cuando hay mas datos-----

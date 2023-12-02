@@ -220,6 +220,17 @@ def recibir_datos():
             finallst = topSuggestions(fullObjs, count, items)
             return finallst
         
+        
+
+
+        df_userselect = peli[peli['userId'] == numerox]
+        movie_ids_user1 = df_userselect['movieId'].tolist()
+        rae = peli.query('movieId in @movie_ids_user1')
+
+        rae['userId'] = rae['userId'].astype('int')
+        rae['movieId'] = rae['movieId'].astype('int')
+        rae['rating'] = rae['rating'].astype('float32')
+
         lsrae = readLargeFile(rae.head(1000)) 
         usuario = 45700
         rfunc = manhattanL
@@ -228,18 +239,7 @@ def recibir_datos():
         lista = recommendationL(usuario, rfunc, 10, 20, 3.0, lsrae) # 3 seg
 
 
-
-
-        '''df_userselect = peli[peli['userId'] == numerox]
-        movie_ids_user1 = df_userselect['movieId'].tolist()
-        rae = peli.query('movieId in @movie_ids_user1')
-
-        rae['userId'] = rae['userId'].astype('int')
-        rae['movieId'] = rae['movieId'].astype('int')
-        rae['rating'] = rae['rating'].astype('float32')
-
-
-        consolidated_dfmi = columnas(rae, col1, col2, col3)
+        '''consolidated_dfmi = columnas(rae, col1, col2, col3)
         #consolidated_dfmi = consolidated_dfmi.head(300)
         #consolidated_dfmi = pd.concat([consolidated_dfmi.query(f'userId == {numerox}'), consolidated_dfmi.head(300)])
         consolidated_dfmi = pd.concat([consolidated_dfmi.query(f'userId == {numerox}'), consolidated_dfmi.head(20000)])
@@ -296,7 +296,8 @@ def recibir_datos():
         redis_conn.set('valoresfinal', json.dumps(valoresfinal))
         redis_conn.set('peliculas', json.dumps(peliculasp))
 
-        return jsonify(valoresfinal)
+        #return jsonify(valoresfinal)
+        return jsonify("exitoso")
     else:
         return jsonify({"mensaje": "Esta ruta solo acepta solicitudes POST"})
 #----------------------------------------------------------------

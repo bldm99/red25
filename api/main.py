@@ -62,14 +62,25 @@ def recibir_csv():
         consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
 
         #Generamos 5 dataframe , estos para cada instancia
-        instancia1 = consolidated_dfmi.head(20000) 
-        instancia1 = pd.concat([instancia1.query(f'userId == {theuserx}'), instancia1])
+        #instancia1 = consolidated_dfmi.head(20000) 
+        instancia1 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.head(20000)])
         instancia1 = instancia1.loc[~instancia1.index.duplicated(keep='first')]
-        
-        instancia2 = consolidated_dfmi.iloc[20000:50001]
-        instancia3 = consolidated_dfmi.iloc[50000:70001]
-        instancia4 = consolidated_dfmi.iloc[90000:100001]
-        instancia5 = consolidated_dfmi.iloc[100000:]
+
+        #instancia2 = consolidated_dfmi.iloc[20000:50001]
+        instancia2 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[20000:50001]])
+        instancia2 = instancia2.loc[~instancia2.index.duplicated(keep='first')]
+
+        #instancia3 = consolidated_dfmi.iloc[50000:70001]
+        instancia3 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[50000:70001]])
+        instancia3 = instancia3.loc[~instancia3.index.duplicated(keep='first')]
+
+        #instancia4 = consolidated_dfmi.iloc[90000:100001]
+        instancia4 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[90000:100001]])
+        instancia4 = instancia4.loc[~instancia4.index.duplicated(keep='first')]
+
+        #instancia5 = consolidated_dfmi.iloc[100000:]
+        instancia5 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[100000:]])
+        instancia5 = instancia5.loc[~instancia5.index.duplicated(keep='first')]
 
         columns1 = instancia1.columns
         values1 = instancia1.values

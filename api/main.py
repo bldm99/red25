@@ -46,6 +46,7 @@ def recibir_csv():
         movie_ids_user1 = df_userselect['movieId'].tolist()
         rae = midf.query('movieId in @movie_ids_user1')
 
+
         rae['userId'] = rae['userId'].astype('int')
         rae['movieId'] = rae['movieId'].astype('int')
         #rae['rating'] = rae['rating'].astype('float32')
@@ -53,15 +54,51 @@ def recibir_csv():
         #lsrae = readLargeFile(rae.head(100000)) 
         #rae = rae.head(100000)
 
+        #Generamos un datframe por que es mas rapido y facil de manipular al hacer agrupaminto
+        #pero puede consumir mas memoria
         consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
-        # Obtener las columnas y valores del DataFrame
+
+        #Generamos 5 dataframe , estos para cada instancia
+        instancia1 = consolidated_dfmi.head(20000) 
+        instancia2 = consolidated_dfmi.iloc[20000:50001]
+        instancia3 = consolidated_dfmi.iloc[50000:70001]
+        instancia4 = consolidated_dfmi.iloc[90000:100001]
+        instancia5 = consolidated_dfmi.iloc[100000:]
+
+        columns1 = instancia1.columns
+        values1 = instancia1.values
+        columns2 = instancia2.columns
+        values2 = instancia2.values
+        columns3 = instancia3.columns
+        values3 = instancia3.values
+        columns4 = instancia4.columns
+        values4 = instancia4.values
+        columns5 = instancia5.columns
+        values5 = instancia5.values
+
+        lsrae1 = {user: {movie: rating for movie, rating in zip(columns1, row) if not pd.isna(rating)} for user, row in zip(instancia1.index, values1)}
+        redis_conn.set('lsrae1', json.dumps(lsrae1))
+
+        lsrae2 = {user: {movie: rating for movie, rating in zip(columns2, row) if not pd.isna(rating)} for user, row in zip(instancia2.index, values2)}
+        redis_conn.set('lsrae2', json.dumps(lsrae2))
+
+        lsrae3 = {user: {movie: rating for movie, rating in zip(columns3, row) if not pd.isna(rating)} for user, row in zip(instancia3.index, values3)}
+        redis_conn.set('lsrae3', json.dumps(lsrae3))
+
+        lsrae4 = {user: {movie: rating for movie, rating in zip(columns4, row) if not pd.isna(rating)} for user, row in zip(instancia4.index, values4)}
+        redis_conn.set('lsrae4', json.dumps(lsrae4))
+
+        lsrae5 = {user: {movie: rating for movie, rating in zip(columns5, row) if not pd.isna(rating)} for user, row in zip(instancia5.index, values5)}
+        redis_conn.set('lsrae5', json.dumps(lsrae5))
+
+        '''# Obtener las columnas y valores del DataFrame
         columns = consolidated_dfmi.columns
         values = consolidated_dfmi.values
 
         # Crear un diccionario a partir de los valores
         lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
         usuariosp = lsrae
-        redis_conn.set('lsrae', json.dumps(lsrae))
+        redis_conn.set('lsrae', json.dumps(lsrae))'''
         #--------------------------------------
 
         '''data = request.get_json()  
@@ -268,7 +305,7 @@ def recibir_datos():
         # Crear un diccionario a partir de los valores
         lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}'''
 
-        lsrae_cached = redis_conn.get('lsrae')
+        lsrae_cached = redis_conn.get('lsrae1')
         lsrae = json.loads(lsrae_cached)
 
         datafinal = {int(k): {float(k2): v2 for k2, v2 in v.items()} for k, v in lsrae.items()}

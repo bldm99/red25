@@ -47,16 +47,107 @@ def recibir_csv():
         midf = dt.fread('movie25.csv').to_pandas()
         #midf = midf.head(5000000)
 
+        #Busacmos el usuario seleccionado en todos los 25M (puede mejorar)
         df_userselect = midf[midf['userId'] == theuserx]
-        movie_ids_user1 = df_userselect['movieId'].tolist()
+        movie_ids_user1 = df_userselect['movieId'].tolist() #Todas las peliculas que vio en una lista
+        #Buscamos todas esas peliculas en los 25M
         rae = midf.query('movieId in @movie_ids_user1')
-
 
         rae['userId'] = rae['userId'].astype('int')
         rae['movieId'] = rae['movieId'].astype('int')
         #rae['rating'] = rae['rating'].astype('float32')
 
-        #lsrae = readLargeFile(rae.head(100000)) 
+        #Obtenemos todos los usuarios que han vistos las mismas peliculas que nosotros
+        users = rae['userId'].unique().tolist()
+
+        #Dicvidiresmos todos estos usuarios en 5 partes
+        num_parts = 5
+        part_size = len(users) // num_parts
+
+        user_parts = [users[i * part_size:(i + 1) * part_size] for i in range(num_parts)]
+        user_parts[-1] += users[num_parts * part_size:]
+
+        # Almacenamos cada parte en una lista separada
+        user_part_1, user_part_2, user_part_3, user_part_4, user_part_5 = user_parts
+
+        #Filtramos de del dataframe rae todos los datos que tengan los usarios de las lista user_part_1
+        sep1 = rae.query('userId in @user_part_1')
+        sep2 = rae.query('userId in @user_part_2')
+        sep3 = rae.query('userId in @user_part_3')
+        sep4 = rae.query('userId in @user_part_4')
+        sep5 = rae.query('userId in @user_part_5')
+
+        #Tratamos los datos
+        sep1['userId'] = sep1['userId'].astype('int')
+        sep1['movieId'] = sep1['movieId'].astype('int')
+        sep1['rating'] = sep1['rating'].astype('float32')
+        sep2['userId'] = sep2['userId'].astype('int')
+        sep2['movieId'] = sep2['movieId'].astype('int')
+        sep2['rating'] = sep2['rating'].astype('float32')
+        sep3['userId'] = sep3['userId'].astype('int')
+        sep3['movieId'] = sep3['movieId'].astype('int')
+        sep3['rating'] = sep3['rating'].astype('float32')
+        sep4['userId'] = sep4['userId'].astype('int')
+        sep4['movieId'] = sep4['movieId'].astype('int')
+        sep4['rating'] = sep4['rating'].astype('float32')
+        sep5['userId'] = sep5['userId'].astype('int')
+        sep5['movieId'] = sep5['movieId'].astype('int')
+        sep5['rating'] = sep5['rating'].astype('float32')
+
+        #Agrupamos los datos del dataframe sep1
+        sep_dfmi1 = sep1.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        sep_dfmi2 = sep2.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        sep_dfmi3 = sep3.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        sep_dfmi4 = sep4.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        sep_dfmi5 = sep5.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+
+        #Obtenemos datos especificos del usaurio seleccionados
+        #Primero buscaremos el usuario seleccionado en todo el dataframe de rae
+        df_user_data = rae[rae['userId'] == theuserx]
+        #Luego agrupamos todas laspeliclas que vio
+        df_user_fila_unica = df_user_data.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+
+        #concatenamos nuestra fila unica del usuario select con con el resto de los otros usuarios
+        instancia1 = pd.concat([df_user_fila_unica , sep_dfmi1])
+        instancia2 = pd.concat([df_user_fila_unica , sep_dfmi2])
+        instancia3 = pd.concat([df_user_fila_unica , sep_dfmi3])
+        instancia4 = pd.concat([df_user_fila_unica , sep_dfmi4])
+        instancia5 = pd.concat([df_user_fila_unica , sep_dfmi5])
+        #Eliminamos duplicados genralmente solo habra un duplicados pero no siempre
+        instancia1 = instancia1.loc[~instancia1.index.duplicated(keep='first')]
+        instancia2 = instancia2.loc[~instancia2.index.duplicated(keep='first')]
+        instancia3 = instancia3.loc[~instancia3.index.duplicated(keep='first')]
+        instancia4 = instancia4.loc[~instancia4.index.duplicated(keep='first')]
+        instancia5 = instancia5.loc[~instancia5.index.duplicated(keep='first')]
+
+        #Convertimis nuestro dataframe instancia1 a un diccionario
+        diccionario1 = {}
+        instancia1.apply(lambda row: diccionario1.update({row.name: row.dropna().to_dict()}), axis=1)
+
+        diccionario2 = {}
+        instancia2.apply(lambda row: diccionario2.update({row.name: row.dropna().to_dict()}), axis=1)
+
+        diccionario3 = {}
+        instancia3.apply(lambda row: diccionario3.update({row.name: row.dropna().to_dict()}), axis=1)
+
+        diccionario4 = {}
+        instancia4.apply(lambda row: diccionario4.update({row.name: row.dropna().to_dict()}), axis=1)
+
+        diccionario5 = {}
+        instancia5.apply(lambda row: diccionario5.update({row.name: row.dropna().to_dict()}), axis=1)
+
+
+        #Guardamos ese diccinario1 en redis
+        redis_conn.set('lsrae1', json.dumps(diccionario1))
+        redis_conn.set('lsrae2', json.dumps(diccionario2))
+        redis_conn.set('lsrae3', json.dumps(diccionario3))
+        redis_conn.set('lsrae4', json.dumps(diccionario4))
+        redis_conn.set('lsrae5', json.dumps(diccionario5))
+
+                
+
+
+        '''#lsrae = readLargeFile(rae.head(100000)) 
         #rae = rae.head(100000)
 
         #Generamos un datframe por que es mas rapido y facil de manipular al hacer agrupaminto
@@ -108,7 +199,7 @@ def recibir_csv():
         redis_conn.set('lsrae4', json.dumps(lsrae4))
 
         lsrae5 = {user: {movie: rating for movie, rating in zip(columns5, row) if not pd.isna(rating)} for user, row in zip(instancia5.index, values5)}
-        redis_conn.set('lsrae5', json.dumps(lsrae5))
+        redis_conn.set('lsrae5', json.dumps(lsrae5))'''
 
         '''# Obtener las columnas y valores del DataFrame
         columns = consolidated_dfmi.columns

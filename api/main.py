@@ -36,13 +36,16 @@ def recibir_csv():
     global midf
     global usuariosp
     if request.method == 'POST':
+        data = request.get_json()  
+        theuser = data.get('user')  
+        theuserx = int(theuser)
 
         #Pruebas de codigo---------------------
         csv_path = '/shared_data/movie25.csv'
         midf = pd.read_csv(csv_path , sep=";")
         #midf = midf.head(5000000)
 
-        df_userselect = midf[midf['userId'] == 1]
+        df_userselect = midf[midf['userId'] == theuserx]
         movie_ids_user1 = df_userselect['movieId'].tolist()
         rae = midf.query('movieId in @movie_ids_user1')
 

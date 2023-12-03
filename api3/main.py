@@ -9,7 +9,7 @@ import pandas as pd
 from linkextractor import columnas
 import numpy as np
 from scipy.spatial.distance import cityblock
-
+import math
 
 app = Flask(__name__)
 CORS(app)
@@ -44,95 +44,157 @@ def recibir_datos():
     if request.method == 'POST':
         data = request.get_json()  
 
-        #csv_cached = redis_conn.get('csv')
-        #csv_data = json.loads(csv_cached)
-
-        #nombre = data.get('obj')  
-        
-
         col1 = data.get('col1')
         col2 = data.get('col2')
         col3 = data.get('col3')
 
         numero = data.get('numero')  
         numerox = int(numero)
-        csv_path = '/shared_data/movie.csv'
-        af = pd.read_csv(csv_path)
+
+        def manhattanL(user1, user2):
+            dist = 0.0
+            count = 0
+            for i in user2:
+                if not (user1.get(i) is None):
+                    x = user1[i]
+                    y = user2[i]
+                    dist += abs(x - y)
+                    count += 1
+
+            if count == 0:
+                return 9999.99
+            return dist
         
-        peli = af
+                # Init K-vector with correct value based on distance type
+        def initVectDist(funName, N):
+            if funName == 'euclidiana' or funName == 'manhattan' or funName == 'euclidianaL' or funName == 'manhattanL':
+                ls = [99999] * N
+            else:
+                ls = [-1] * N
 
-        #peli = pd.DataFrame(nombre)
-        #peli = pd.DataFrame(csv_data)
-
-
-        peli[col3] = pd.to_numeric(peli[col3], errors='coerce')
-        #peli['movieId'] = pd.to_numeric(peli['movieId'], errors='coerce')
-        peli[col1] = pd.to_numeric(peli[col1], errors='coerce')
-
-
-        consolidated_dfmi = columnas(peli, col1, col2, col3)
-        #consolidated_dfmi = pd.concat([consolidated_dfmi.iloc[:numerox], consolidated_dfmi.iloc[300:]])
-        consolidated_dfmi = pd.concat([consolidated_dfmi.query(f'userId == {numerox}'), consolidated_dfmi.iloc[2000:3001]])
-        consolidated_dfmi = consolidated_dfmi.loc[~consolidated_dfmi.index.duplicated(keep='first')]
-        consolidated_dfmi = consolidated_dfmi.fillna(0)
+            lu = [None] * N
+            return ls, lu
 
 
-        def computeNearestNeighbor(dataframe, target_user, distance_metric=cityblock):
-            distances = np.zeros(len(dataframe))
-            target_row = dataframe.loc[target_user]  
-            for i, (index, row) in enumerate(dataframe.iterrows()):
-                if index == target_user:
-                    continue  
-                
-                non_zero_values = (target_row != 0) & (row != 0)
-                distance = distance_metric(target_row[non_zero_values].fillna(0), row[non_zero_values].fillna(0))
-                distances[i] = distance
-            
-            sorted_indices = np.argsort(distances)
-            sorted_distances = distances[sorted_indices]
-            return list(zip(dataframe.index[sorted_indices], sorted_distances))
+        # Keep the closest values, avoiding sort
+        def keepClosest(funname, lstdist, lstuser, newdist, newuser, N):
+            if funname == 'euclidiana' or funname == 'manhattan' or funname == 'euclidianaL' or funname == 'manhattanL':
+                count = -1
+                for i in lstdist:
+                    count += 1
+                    if newdist > i:
+                        continue
+                    lstdist.insert(count, newdist)
+                    lstuser.insert(count, newuser)
+                    break
+            else:
+                count = -1
+                for i in lstdist:
+                    count += 1
+                    if newdist < i:
+                        continue
+                    lstdist.insert(count, newdist)
+                    lstuser.insert(count, newuser)
+                    break
+
+            if len(lstdist) > N:
+                lstdist.pop()
+                lstuser.pop()
+            return lstdist, lstuser
         
+                # K-Nearest neighbour
+        def knn_L(N, distancia, usuario, data):  # N numero de vecinos
+            funName = distancia.__name__
+            print('k-nn', funName)
 
-        target_user_id = numerox
-        neighborsmi = computeNearestNeighbor(consolidated_dfmi, target_user_id)
-        diccionario_resultante = dict(neighborsmi)
-        valoresfinal = diccionario_resultante
+            listDist, listName = initVectDist(funName, N)
+            nsize = len(data)
+            otherusers = range(0, nsize)
+            vectoruser = data.get(usuario)
 
-        #pruebas
-        cd2 = pd.DataFrame(neighborsmi)
-        cd2.columns = ['Id_user', 'Distancias']
+            for i in range(0, nsize):
+                tmpuser = i
+                if tmpuser != usuario:
+                    tmpvector = data.get(tmpuser)
+                    if not (tmpvector is None):
+                        tmpdist = distancia(vectoruser, tmpvector)
+                        if tmpdist is not math.nan:
+                            listDist, listName = keepClosest(funName, listDist, listName, tmpdist, tmpuser, N)
 
-        primeros = cd2['Id_user'].unique().tolist()[:10]
-        resul = peli.query('userId in @primeros')
-        newx = resul.query('rating == 5.0')['movieId'].drop_duplicates()
-        dictionary_final = dict(zip(newx.index, newx.values))
-        peliculasp = dictionary_final
-
-        '''peli = pd.DataFrame(nombre)
-        data = peli['rating'].value_counts().sort_index(ascending=False)
-        diccionario_resultante = data.to_dict()
-        valoresfinal = diccionario_resultante'''
-
-        cached_data = redis_conn.get('valoresfinal') #300 valores
-        newcached_data = json.loads(cached_data)
-        newcached_data.update(valoresfinal)
+            return listDist, listName
         
+        def topSuggestions(fullObj, k, items):
+            rp = [-1]*items
+
+            for i in fullObj:
+                rating = fullObj.get(i)
+
+                for j in range(0, items):
+                    if rp[j] == -1 :
+                        tmp = [i, rating[0], rating[1]]
+                        rp.insert(j, tmp)
+                        rp.pop()
+                        break
+                    else:
+                        tval = rp[j]
+                        if tval[1] < rating[0]:
+                            tmp = [i, rating[0], rating[1]]
+                            rp.insert(j, tmp)
+                            rp.pop()
+                            break
+
+            return rp
         
+        def recommendationL(usuario, distancia, N, items, minr, data):
+            ldistK, luserK = knn_L(N, distancia, usuario, data)
 
+            user = data.get(usuario)
+            recom = [None] * N
+            for i in range(0, N):
+                recom[i] = data.get(luserK[i])
+            # print('user preference:', user)
+
+            lstRecomm = [-1] * items
+            lstUser = [None] * items
+            lstObj = [None] * items
+            k = 0
+
+            fullObjs = {}
+            count = 0
+            for i in recom:
+                for j in i:
+                    tmp = fullObjs.get(j)
+                    if tmp is None:
+                        fullObjs[j] = [i.get(j), luserK[count]]
+                    else:
+                        nval = i.get(j)
+                        if nval > tmp[0]:
+                            fullObjs[j] = [nval, luserK[count]]
+                count += 1
+
+            finallst = topSuggestions(fullObjs, count, items)
+            return finallst
         
+        lsrae_cached = redis_conn.get('lsrae3')
+        lsrae = json.loads(lsrae_cached)
 
+        datafinal = {int(k): {float(k2): v2 for k2, v2 in v.items()} for k, v in lsrae.items()}
+        
+        rfunc = manhattanL
+        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, datafinal)
 
+        tratado = [item for item in lista if item != -1]
+        peliculasp = {i: item[0] for i, item in enumerate(tratado, start=1)}
+       
 
-        #redis_conn.set('valoresfinal', json.dumps(valoresfinal))
-        redis_conn.set('valoresfinal', json.dumps(newcached_data))
+        redis_conn.set('valoresfinal', json.dumps(valoresfinal))
         redis_conn.set('peliculas', json.dumps(peliculasp))
 
-
-        #return jsonify(valoresfinal)
-        return jsonify(valoresfinal)
+        return jsonify("exitoso")
     else:
         return jsonify({"mensaje": "Esta ruta solo acepta solicitudes POST"})
 #----------------------------------------------------------------
+
 
 
 

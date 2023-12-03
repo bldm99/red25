@@ -58,7 +58,7 @@ def recibir_csv():
 
         # Crear un diccionario a partir de los valores
         lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
-
+        peliculasp = lsrae
         redis_conn.set('lsrae', json.dumps(lsrae))
         #--------------------------------------
 
@@ -268,12 +268,17 @@ def recibir_datos():
 
         lsrae_cached = redis_conn.get('lsrae')
 
+        if lsrae_cached:
+            lsrae = json.loads(lsrae_cached)
+            print(peliculasp == lsrae)
 
-        lsrae = json.loads(lsrae_cached)
-        rfunc = manhattanL
+            # Ahora puedes usar lsrae en tu lógica de recomendación
+            #rfunc = manhattanL
+            #lista = recommendationL(numerox, rfunc, 10, 20, 3.0, lsrae)
+        else:
+            # Manejar el caso en que lsrae no está en Redis
+            print("El diccionario lsrae no está en Redis. Realiza el procesamiento necesario para obtenerlo.")
 
-        # 10 vecinos, 20 recomendaciones
-        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, lsrae) # 3 seg
 
 
         '''consolidated_dfmi = columnas(rae, col1, col2, col3)
@@ -367,7 +372,7 @@ def get_peliculas():
 
 @app.route('/api/csv', methods=['GET'])
 def get_csv():
-    csv_cached = redis_conn.get('csv') 
+    csv_cached = redis_conn.get('lsrae') 
     if csv_cached:
         csvx = json.loads(csv_cached)
         return jsonify(csvx)

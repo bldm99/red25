@@ -63,6 +63,9 @@ def recibir_csv():
 
         #Generamos 5 dataframe , estos para cada instancia
         instancia1 = consolidated_dfmi.head(20000) 
+        instancia1 = pd.concat([instancia1.query(f'userId == {theuserx}'), instancia1])
+        instancia1 = instancia1.loc[~instancia1.index.duplicated(keep='first')]
+        
         instancia2 = consolidated_dfmi.iloc[20000:50001]
         instancia3 = consolidated_dfmi.iloc[50000:70001]
         instancia4 = consolidated_dfmi.iloc[90000:100001]

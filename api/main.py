@@ -234,8 +234,9 @@ def recibir_datos():
             nsize = len(data)
             otherusers = range(0, nsize)
             vectoruser = data.get(usuario)
+            claves_principales = list(data.keys())
 
-            for i in range(0, nsize):
+            for i in claves_principales: #recorre de 0 a cantidad de datos del diicionario digamos 10
                 tmpuser = i
                 if tmpuser != usuario:
                     tmpvector = data.get(tmpuser)

@@ -11,7 +11,7 @@ import numpy as np
 from scipy.spatial.distance import cityblock
 import math
 
-from main import midf
+
 
 app = Flask(__name__)
 CORS(app)

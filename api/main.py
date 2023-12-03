@@ -25,6 +25,7 @@ def index():
 total = {}
 valoresfinal = {}
 peliculasp = {}
+usuariosp = {}
 df = pd.DataFrame()
 midf = pd.DataFrame()
 csv_path = '/shared_data/movie.csv'
@@ -46,7 +47,7 @@ def recibir_csv():
 
         rae['userId'] = rae['userId'].astype('int')
         rae['movieId'] = rae['movieId'].astype('int')
-        rae['rating'] = rae['rating'].astype('float32')
+        #rae['rating'] = rae['rating'].astype('float32')
 
         #lsrae = readLargeFile(rae.head(100000)) 
         #rae = rae.head(100000)
@@ -58,7 +59,7 @@ def recibir_csv():
 
         # Crear un diccionario a partir de los valores
         lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
-        peliculasp = lsrae
+        usuariosp = lsrae
         redis_conn.set('lsrae', json.dumps(lsrae))
         #--------------------------------------
 
@@ -75,7 +76,7 @@ def recibir_csv():
 
 @app.route('/api/valor', methods=['POST'])
 def recibir_datos():
-    global valoresfinal , peliculasp
+    global valoresfinal , peliculasp ,usuariosp
     if request.method == 'POST':
         data = request.get_json()  
 
@@ -268,18 +269,12 @@ def recibir_datos():
 
         lsrae_cached = redis_conn.get('lsrae')
 
-        if lsrae_cached:
-            lsrae = json.loads(lsrae_cached)
-            print(peliculasp == lsrae)
-
-            # Ahora puedes usar lsrae en tu lógica de recomendación
-            #rfunc = manhattanL
-            #lista = recommendationL(numerox, rfunc, 10, 20, 3.0, lsrae)
-        else:
-            # Manejar el caso en que lsrae no está en Redis
-            print("El diccionario lsrae no está en Redis. Realiza el procesamiento necesario para obtenerlo.")
-
-
+   
+        lsrae = json.loads(lsrae_cached)
+        # Ahora puedes usar lsrae en tu lógica de recomendación
+        rfunc = manhattanL
+        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, usuariosp)
+  
 
         '''consolidated_dfmi = columnas(rae, col1, col2, col3)
         #consolidated_dfmi = consolidated_dfmi.head(300)

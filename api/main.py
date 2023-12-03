@@ -34,6 +34,7 @@ csv_path = '/shared_data/movie.csv'
 def recibir_csv():
     global df
     global midf
+    global usuariosp
     if request.method == 'POST':
 
         #Pruebas de codigo---------------------
@@ -268,12 +269,12 @@ def recibir_datos():
         lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}'''
 
         lsrae_cached = redis_conn.get('lsrae')
-
-   
         lsrae = json.loads(lsrae_cached)
-        # Ahora puedes usar lsrae en tu lógica de recomendación
+
+        datafinal = {int(k): {float(k2): v2 for k2, v2 in v.items()} for k, v in lsrae.items()}
+        
         rfunc = manhattanL
-        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, usuariosp)
+        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, datafinal)
   
 
         '''consolidated_dfmi = columnas(rae, col1, col2, col3)

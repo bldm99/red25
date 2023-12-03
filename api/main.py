@@ -10,6 +10,7 @@ from linkextractor import columnas
 import numpy as np
 from scipy.spatial.distance import cityblock
 import math
+from datatable import dt, f, by, g, join, sort, update, ifelse
 
 
 app = Flask(__name__)
@@ -42,7 +43,8 @@ def recibir_csv():
 
         #Pruebas de codigo---------------------
         csv_path = '/shared_data/movie25.csv'
-        midf = pd.read_csv(csv_path , sep=";")
+        #midf = pd.read_csv(csv_path , sep=";")
+        midf = dt.fread('movie25.csv').to_pandas()
         #midf = midf.head(5000000)
 
         df_userselect = midf[midf['userId'] == theuserx]

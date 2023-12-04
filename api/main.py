@@ -29,10 +29,12 @@ celery.conf.update(app.config)
 redis_conn = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
 @celery.task
-def process_csv_task(theuserx):
+def process_csv_task(data):
     # Lógica para procesar el CSV
     #Pruebas de codigo---------------------
     #theuserx = int(theuser)
+    theuser = data.get('user')  
+    theuserx = int(theuser)
     csv_path = '/shared_data/movie25.csv'
     #midf = pd.read_csv(csv_path , sep=";")
     midf = dt.fread(csv_path).to_pandas()
@@ -268,7 +270,7 @@ def recibir_csv():
         redis_conn.set('lsrae5', json.dumps(diccionario5))'''
 
         # Iniciar la tarea Celery para procesar el CSV en segundo plano
-        process_csv_task.delay(theuserx)
+        process_csv_task.delay(data)
         
         return jsonify({"mensaje": "csv cargado correctamente a redis 1"})
     else:

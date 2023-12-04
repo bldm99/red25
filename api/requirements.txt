@@ -7,3 +7,4 @@ flask-cors
 numpy
 scipy
 datatable
+celery

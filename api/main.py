@@ -44,7 +44,7 @@ def recibir_csv():
         #Pruebas de codigo---------------------
         csv_path = '/shared_data/movie25.csv'
         #midf = pd.read_csv(csv_path , sep=";")
-        midf = dt.fread('movie25.csv').to_pandas()
+        midf = dt.fread(csv_path).to_pandas()
         #midf = midf.head(5000000)
 
         #Busacmos el usuario seleccionado en todos los 25M (puede mejorar)
@@ -72,16 +72,16 @@ def recibir_csv():
 
         #Filtramos de del dataframe rae todos los datos que tengan los usarios de las lista user_part_1
         sep1 = rae.query('userId in @user_part_1')
-        sep2 = rae.query('userId in @user_part_2')
+        '''sep2 = rae.query('userId in @user_part_2')
         sep3 = rae.query('userId in @user_part_3')
         sep4 = rae.query('userId in @user_part_4')
-        sep5 = rae.query('userId in @user_part_5')
+        sep5 = rae.query('userId in @user_part_5')'''
 
         #Tratamos los datos
         sep1['userId'] = sep1['userId'].astype('int')
         sep1['movieId'] = sep1['movieId'].astype('int')
         sep1['rating'] = sep1['rating'].astype('float32')
-        sep2['userId'] = sep2['userId'].astype('int')
+        '''sep2['userId'] = sep2['userId'].astype('int')
         sep2['movieId'] = sep2['movieId'].astype('int')
         sep2['rating'] = sep2['rating'].astype('float32')
         sep3['userId'] = sep3['userId'].astype('int')
@@ -92,14 +92,14 @@ def recibir_csv():
         sep4['rating'] = sep4['rating'].astype('float32')
         sep5['userId'] = sep5['userId'].astype('int')
         sep5['movieId'] = sep5['movieId'].astype('int')
-        sep5['rating'] = sep5['rating'].astype('float32')
+        sep5['rating'] = sep5['rating'].astype('float32')'''
 
         #Agrupamos los datos del dataframe sep1
         sep_dfmi1 = sep1.groupby(['userId', 'movieId'])['rating'].mean().unstack()
-        sep_dfmi2 = sep2.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        '''sep_dfmi2 = sep2.groupby(['userId', 'movieId'])['rating'].mean().unstack()
         sep_dfmi3 = sep3.groupby(['userId', 'movieId'])['rating'].mean().unstack()
         sep_dfmi4 = sep4.groupby(['userId', 'movieId'])['rating'].mean().unstack()
-        sep_dfmi5 = sep5.groupby(['userId', 'movieId'])['rating'].mean().unstack()
+        sep_dfmi5 = sep5.groupby(['userId', 'movieId'])['rating'].mean().unstack()'''
 
         #Obtenemos datos especificos del usaurio seleccionados
         #Primero buscaremos el usuario seleccionado en todo el dataframe de rae
@@ -109,22 +109,22 @@ def recibir_csv():
 
         #concatenamos nuestra fila unica del usuario select con con el resto de los otros usuarios
         instancia1 = pd.concat([df_user_fila_unica , sep_dfmi1])
-        instancia2 = pd.concat([df_user_fila_unica , sep_dfmi2])
+        '''instancia2 = pd.concat([df_user_fila_unica , sep_dfmi2])
         instancia3 = pd.concat([df_user_fila_unica , sep_dfmi3])
         instancia4 = pd.concat([df_user_fila_unica , sep_dfmi4])
-        instancia5 = pd.concat([df_user_fila_unica , sep_dfmi5])
+        instancia5 = pd.concat([df_user_fila_unica , sep_dfmi5])'''
         #Eliminamos duplicados genralmente solo habra un duplicados pero no siempre
         instancia1 = instancia1.loc[~instancia1.index.duplicated(keep='first')]
-        instancia2 = instancia2.loc[~instancia2.index.duplicated(keep='first')]
+        '''instancia2 = instancia2.loc[~instancia2.index.duplicated(keep='first')]
         instancia3 = instancia3.loc[~instancia3.index.duplicated(keep='first')]
         instancia4 = instancia4.loc[~instancia4.index.duplicated(keep='first')]
-        instancia5 = instancia5.loc[~instancia5.index.duplicated(keep='first')]
+        instancia5 = instancia5.loc[~instancia5.index.duplicated(keep='first')]'''
 
         #Convertimis nuestro dataframe instancia1 a un diccionario
         diccionario1 = {}
         instancia1.apply(lambda row: diccionario1.update({row.name: row.dropna().to_dict()}), axis=1)
 
-        diccionario2 = {}
+        '''diccionario2 = {}
         instancia2.apply(lambda row: diccionario2.update({row.name: row.dropna().to_dict()}), axis=1)
 
         diccionario3 = {}
@@ -134,90 +134,18 @@ def recibir_csv():
         instancia4.apply(lambda row: diccionario4.update({row.name: row.dropna().to_dict()}), axis=1)
 
         diccionario5 = {}
-        instancia5.apply(lambda row: diccionario5.update({row.name: row.dropna().to_dict()}), axis=1)
+        instancia5.apply(lambda row: diccionario5.update({row.name: row.dropna().to_dict()}), axis=1)'''
 
 
         #Guardamos ese diccinario1 en redis
         redis_conn.set('lsrae1', json.dumps(diccionario1))
-        redis_conn.set('lsrae2', json.dumps(diccionario2))
+        '''redis_conn.set('lsrae2', json.dumps(diccionario2))
         redis_conn.set('lsrae3', json.dumps(diccionario3))
         redis_conn.set('lsrae4', json.dumps(diccionario4))
-        redis_conn.set('lsrae5', json.dumps(diccionario5))
+        redis_conn.set('lsrae5', json.dumps(diccionario5))'''
 
-                
-
-
-        '''#lsrae = readLargeFile(rae.head(100000)) 
-        #rae = rae.head(100000)
-
-        #Generamos un datframe por que es mas rapido y facil de manipular al hacer agrupaminto
-        #pero puede consumir mas memoria
-        consolidated_dfmi = rae.groupby(['userId', 'movieId'])['rating'].mean().unstack()
-
-        #Generamos 5 dataframe , estos para cada instancia
-        #instancia1 = consolidated_dfmi.head(20000) 
-        instancia1 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.head(20000)])
-        instancia1 = instancia1.loc[~instancia1.index.duplicated(keep='first')]
-
-        #instancia2 = consolidated_dfmi.iloc[20000:50001]
-        instancia2 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[20000:50001]])
-        instancia2 = instancia2.loc[~instancia2.index.duplicated(keep='first')]
-
-        #instancia3 = consolidated_dfmi.iloc[50000:70001]
-        instancia3 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[50000:70001]])
-        instancia3 = instancia3.loc[~instancia3.index.duplicated(keep='first')]
-
-        #instancia4 = consolidated_dfmi.iloc[90000:100001]
-        instancia4 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[90000:100001]])
-        instancia4 = instancia4.loc[~instancia4.index.duplicated(keep='first')]
-
-        #instancia5 = consolidated_dfmi.iloc[100000:]
-        instancia5 = pd.concat([consolidated_dfmi.query(f'userId == {theuserx}'), consolidated_dfmi.iloc[100000:]])
-        instancia5 = instancia5.loc[~instancia5.index.duplicated(keep='first')]
-
-        columns1 = instancia1.columns
-        values1 = instancia1.values
-        columns2 = instancia2.columns
-        values2 = instancia2.values
-        columns3 = instancia3.columns
-        values3 = instancia3.values
-        columns4 = instancia4.columns
-        values4 = instancia4.values
-        columns5 = instancia5.columns
-        values5 = instancia5.values
-
-        lsrae1 = {user: {movie: rating for movie, rating in zip(columns1, row) if not pd.isna(rating)} for user, row in zip(instancia1.index, values1)}
-        redis_conn.set('lsrae1', json.dumps(lsrae1))
-
-        lsrae2 = {user: {movie: rating for movie, rating in zip(columns2, row) if not pd.isna(rating)} for user, row in zip(instancia2.index, values2)}
-        redis_conn.set('lsrae2', json.dumps(lsrae2))
-
-        lsrae3 = {user: {movie: rating for movie, rating in zip(columns3, row) if not pd.isna(rating)} for user, row in zip(instancia3.index, values3)}
-        redis_conn.set('lsrae3', json.dumps(lsrae3))
-
-        lsrae4 = {user: {movie: rating for movie, rating in zip(columns4, row) if not pd.isna(rating)} for user, row in zip(instancia4.index, values4)}
-        redis_conn.set('lsrae4', json.dumps(lsrae4))
-
-        lsrae5 = {user: {movie: rating for movie, rating in zip(columns5, row) if not pd.isna(rating)} for user, row in zip(instancia5.index, values5)}
-        redis_conn.set('lsrae5', json.dumps(lsrae5))'''
-
-        '''# Obtener las columnas y valores del DataFrame
-        columns = consolidated_dfmi.columns
-        values = consolidated_dfmi.values
-
-        # Crear un diccionario a partir de los valores
-        lsrae = {user: {movie: rating for movie, rating in zip(columns, row) if not pd.isna(rating)} for user, row in zip(consolidated_dfmi.index, values)}
-        usuariosp = lsrae
-        redis_conn.set('lsrae', json.dumps(lsrae))'''
-        #--------------------------------------
-
-        '''data = request.get_json()  
-        nombre = data.get('obj')  
-        df = pd.DataFrame(nombre)
-        csv_path = '/shared_data/movie.csv'
-        df.to_csv(csv_path, index=False)
-        redis_conn.set('csv', json.dumps(nombre))'''
-        return jsonify({"mensaje": "csv cargado correctamente a redis"})
+        
+        return jsonify({"mensaje": "csv cargado correctamente a redis 1"})
     else:
         return jsonify({"mensaje": "Esta ruta solo acepta solicitudes POST"})
 

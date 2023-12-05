@@ -157,6 +157,7 @@ peliculasp = {}
 usuariosp = {}
 df = pd.DataFrame()
 midf = pd.DataFrame()
+movie_ids_user1 = []
 csv_path = '/shared_data/movie.csv'
 
 @app.route('/api/csv', methods=['POST'])
@@ -164,6 +165,7 @@ def recibir_csv():
     global df
     global midf
     global usuariosp
+    global movie_ids_user1
     if request.method == 'POST':
         data = request.get_json()  
         theuser = data.get('user')  
@@ -306,6 +308,7 @@ def recibir_datos():
         peli['movieId'] = peli['movieId'].astype('int')
         peli['rating'] = peli['rating'].astype('float32')'''
 
+        p = midf
 
         def readLargeFile( data):
             #data = pd.read_csv(filename, delimiter=delim, header=None)
@@ -479,9 +482,34 @@ def recibir_datos():
 
         datafinal = {int(k): {float(k2): v2 for k2, v2 in v.items()} for k, v in lsrae.items()}
         
-        rfunc = manhattanL
-        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, datafinal)
-  
+        '''rfunc = manhattanL
+        lista = recommendationL(numerox, rfunc, 10, 20, 3.0, datafinal)'''
+
+        cant_usuaruios = 10
+        rfuncs = manhattanL
+        mnha = knn_L(cant_usuaruios, rfuncs, numerox, datafinal)
+
+        #obtenemos los vecinos cercanos
+        cercanos = mnha[1]
+        #añadimos a la lista nuestro usuario seleccionado
+        cercanos.append(120)
+        #Filtramos en los 25M todas las filas en la que aparecen estos usuarios
+        datapeli = p.query('userId in @cercanos')
+
+        #Eliminamos duplicados
+        datapeli.drop_duplicates(subset='movieId', inplace=True)
+
+        #Eliminamos las filas donde aparecen las pelicaulas vistas poe le usuariuo sleccionado
+        datapeli = datapeli[~datapeli['movieId'].isin(movie_ids_user1)]
+
+        npeli= datapeli.head(20)
+        #diccionario_peliculas = {}
+        for numero_ciclo, (indice, fila) in enumerate(npeli.iterrows(), start=1):
+            movie_id = int(fila['movieId'])
+            peliculasp[numero_ciclo] = movie_id
+
+      
+        
 
         '''consolidated_dfmi = columnas(rae, col1, col2, col3)
         #consolidated_dfmi = consolidated_dfmi.head(300)
@@ -534,8 +562,9 @@ def recibir_datos():
         datarecomend = dict(lista_tuplas)
         peliculasp = datarecomend
 '''
-        tratado = [item for item in lista if item != -1]
-        peliculasp = {i: item[0] for i, item in enumerate(tratado, start=1)}
+        
+        '''tratado = [item for item in lista if item != -1]
+        peliculasp = {i: item[0] for i, item in enumerate(tratado, start=1)}'''
        
         
     

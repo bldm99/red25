@@ -12,9 +12,6 @@ from scipy.spatial.distance import cityblock
 import math
 from datatable import dt, f, by, g, join, sort, update, ifelse
 
-from celery import Celery
-
-
 
 
 app = Flask(__name__)

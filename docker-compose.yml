@@ -12,7 +12,7 @@ services:
       - redis
     volumes:
       - ./movie25.csv:/shared_data/movie25.csv
-      - ./dataframe.py:/shared_data/dataframe.py
+
 
   api2:
     image: instancesecond:step5-python
